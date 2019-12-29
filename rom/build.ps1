@@ -54,14 +54,14 @@ function compile_c($fileName)
         $createdDirs.add($parentFolder, $parentFolder)
     }
 
-    ccpsx.exe -O3 -g -c -Wall "$fileName" "-o$objName"
+    ccpsx.exe -O2 -G 0 -g -c -Wall "$fileName" "-o$objName"
     if($LASTEXITCODE -eq 0)
     {
         Write-Host "Compiled $fileName" -ForegroundColor "green"
     } 
     else 
     {
-        Write-Error "Compilation failed for: ccpsx.exe -O3 -g -c -Wall $fileName -o$objName"
+        Write-Error "Compilation failed for: ccpsx.exe -O2 -G 0 -g -c -Wall $fileName -o$objName"
     }
 }
 
@@ -110,13 +110,34 @@ foreach ($file in $sFiles)
 }
 
 # Run the linker
-Write-Host "link" -ForegroundColor "DarkMagenta" -BackgroundColor "Black"
-psylink.exe /l $psyq_path\..\LIB /q /c /m /p "@$PSScriptRoot\linker_command_file.txt",$PSScriptRoot\obj\ukcom.rom,$PSScriptRoot\obj\ukcom.sym,$PSScriptRoot\obj\ukcom.map
+Write-Host "link rom" -ForegroundColor "DarkMagenta" -BackgroundColor "Black"
+psylink.exe /z /l $psyq_path\..\LIB /q /c /m /p "@$PSScriptRoot\linker_command_file_rom.txt",$PSScriptRoot\obj\ukcom.rom,$PSScriptRoot\obj\ukcom.sym,$PSScriptRoot\obj\ukcom.map
 if($LASTEXITCODE -eq 0)
 {
-    Write-Host "Linked test2.cpe" -ForegroundColor "yellow"
+    Write-Host "Linked ukcom.rom" -ForegroundColor "yellow"
 } 
 else 
 {
     Write-Error "Linking failed $LASTEXITCODE"
+}
+
+Write-Host "link exe" -ForegroundColor "DarkMagenta" -BackgroundColor "Black"
+psylink.exe /l $psyq_path\..\LIB /q /c /m "@$PSScriptRoot\linker_command_file_exe.txt",$PSScriptRoot\obj\ukcom_exe.cpe,$PSScriptRoot\obj\ukcom_exe.sym,$PSScriptRoot\obj\ukcom_exe.map
+if($LASTEXITCODE -eq 0)
+{
+    Write-Host "Linked ukcom_exe.exe" -ForegroundColor "yellow"
+} 
+else 
+{
+    Write-Error "Linking failed $LASTEXITCODE"
+}
+
+cpe2exe.exe /CJ obj\ukcom_exe.cpe | out-null
+if($LASTEXITCODE -eq 0)
+{
+    Write-Host "obj\ukcom_exe.cpe -> ..\obj\ukcom_exe.exe" -ForegroundColor "yellow"
+} 
+else 
+{
+    Write-Error "Converting CPE to EXE failed"
 }

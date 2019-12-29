@@ -1,8 +1,7 @@
 ; Expansion ROM base address
-	org     $1F000000
+	org     $80010000
 
 ; link objs
-	include "obj\header.obj"
 	include "obj\main.obj"
 
 ; include sdk libs
@@ -12,4 +11,5 @@
 	inclib "libgpu.lib"
 	inclib "libgte.lib"
 	inclib "libapi.lib"
+	inclib "libsn.lib"
 	
