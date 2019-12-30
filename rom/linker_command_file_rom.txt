@@ -2,9 +2,8 @@
 	org     $1F000000
 
 ; link objs
-;	include "obj\header.obj"
 	include "obj\rom_boot.obj"
-	include "obj\main.obj"
+	include "obj\test.obj"
 
 ; include sdk libs
 	inclib "libc.lib"

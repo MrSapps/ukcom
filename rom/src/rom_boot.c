@@ -51,7 +51,7 @@ void replacement_code(void)
 
 // Search the instructions of the above function and return a pointer to the instructions
 // after the 3 nop's.
-unsigned int* get_replacement_code_start(void)
+static unsigned int* get_replacement_code_start(void)
 {
     int nopCount = 0;
     unsigned int* pFuncInstructions = (unsigned int*)replacement_code;
@@ -80,9 +80,9 @@ unsigned int* get_replacement_code_start(void)
 
 // Same as 0x80000040 but using the uncached I/O space. Using the cached space might cause the CPU 
 // to use the cached data which will be the data before we overwrote it.
-unsigned int* BREAK_ADDR  =(unsigned int*)0xa0000040;
+unsigned int* kBreakPointVectorAddress = (unsigned int*)0xa0000040;
 
-void overwrite_cop0_exception_vector(void)
+static void overwrite_cop0_breakpoint_vector(void)
 {
     unsigned int* pPayload = get_replacement_code_start();
     int i;
@@ -90,7 +90,7 @@ void overwrite_cop0_exception_vector(void)
     // Looking at replacement_code() you'll see we need to overwrite 4 instructions.
     for (i=0; i<4; i++)
     {
-        BREAK_ADDR[i] = pPayload[i];
+        kBreakPointVectorAddress[i] = pPayload[i];
     }
 }
 
@@ -103,7 +103,7 @@ void overwrite_cop0_exception_vector(void)
 // Sets a break point on access to 0x80030000, this address is where the bios copies
 // a small PS-EXE which is the shell program that contains the CD-Player and memory card manager.
 // Therefore at this point if we take control we know that the system is booted enough to be in a usable state.
-void install_break_point(void)
+static void install_break_point_on_bios_shell_copy(void)
 {
     // Set BPCM and BDAM masks
     set_BDAM(0xffffffff);
@@ -112,14 +112,14 @@ void install_break_point(void)
     // Set break on PC and data-write address
 
     // BPC break is for compatibility with no$psx as it does not emulate break on BDA
-    set_BDA(0x80030000); // vs 0xbfc0db74
+    set_BDA(0x80030000);
     set_BPC(0x80030000);
 
     // Enable break on data-write and and break on PC to DCIC control register
     set_DCIC(0xeb800000);
 }
 
-void clear_break_point(void)
+static void clear_break_point(void)
 {
     set_DCIC(0x0);
     set_BDAM(0x0);
@@ -128,34 +128,55 @@ void clear_break_point(void)
     set_BPC(0x0);
 }
 
-void SetGp(unsigned int* gp);
+extern const unsigned int exe_data_start;
+extern const unsigned int exe_data_end;
 
-void main();
+unsigned char* pExeTarget = (unsigned char*)0x80010000;
 
-void SetDefaultExitFromException(void);
+static void copy_ps_exe_to_ram()
+{
+    int i;
+    const unsigned int* pSrc = (const unsigned int*)(0x1F000420); 
+    unsigned int* pDst = (unsigned int*)pExeTarget;
+    printf("Copy start from 0x%X08 to 0x%X08\n", pSrc, pDst);
+    for (i=0; i<61440 / 4; i++)
+    {
+        *pDst = *pSrc;
+        pSrc++;
+        pDst++;
+    }
+    printf("Copy end at 0x%X08 from 0x%X08\n", pDst, pSrc);
+}
+
+typedef void(*TEntryPoint)(void);
+
+static void call_ps_exe_entry_point(void)
+{
+    ((TEntryPoint)0x800161F8)();
+}
 
 void mid_boot_entry_point(void)
 {
-    //unsigned int gp =0x8000c000; // 0x1F006CF4;
-
     clear_break_point();
 
-    //SetSp(0x801ffff0);
-    //SetGp(&gp);
-
-    //
-    //SetDefaultExitFromException();
+    SetSp(0x801ffff0);
 
     // Re-enable interrupts
     ExitCriticalSection();
-   
-    main();
+
+    printf("Copy exe\n");
+    copy_ps_exe_to_ram();
+
+    printf("Call proc\n");
+    call_ps_exe_entry_point();
+
+    printf("proc returned!\n");
 }
 
 void pre_boot_entry_point(void)
 {
-    overwrite_cop0_exception_vector();
-    install_break_point();
+    overwrite_cop0_breakpoint_vector();
+    install_break_point_on_bios_shell_copy();
 }
 
 void post_boot_entry_point(void)

@@ -13,3 +13,4 @@
 	inclib "libapi.lib"
 	inclib "libsn.lib"
 	
+	regs    pc=__SN_ENTRY_POINT

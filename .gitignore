@@ -2,3 +2,6 @@
 *.map
 *.rom
 *.bat
+*.sym
+*.exe
+*.cpe

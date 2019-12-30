@@ -111,7 +111,7 @@ foreach ($file in $sFiles)
 
 # Run the linker
 Write-Host "link rom" -ForegroundColor "DarkMagenta" -BackgroundColor "Black"
-psylink.exe /z /l $psyq_path\..\LIB /q /c /m /p "@$PSScriptRoot\linker_command_file_rom.txt",$PSScriptRoot\obj\ukcom.rom,$PSScriptRoot\obj\ukcom.sym,$PSScriptRoot\obj\ukcom.map
+psylink.exe /l $psyq_path\..\LIB /q /c /m /p "@$PSScriptRoot\linker_command_file_rom.txt",$PSScriptRoot\obj\ukcom.rom,$PSScriptRoot\obj\ukcom.sym,$PSScriptRoot\obj\ukcom.map
 if($LASTEXITCODE -eq 0)
 {
     Write-Host "Linked ukcom.rom" -ForegroundColor "yellow"
@@ -132,7 +132,7 @@ else
     Write-Error "Linking failed $LASTEXITCODE"
 }
 
-cpe2exe.exe /CJ obj\ukcom_exe.cpe | out-null
+cpe2exe.exe /CJ obj\ukcom_exe.cpe
 if($LASTEXITCODE -eq 0)
 {
     Write-Host "obj\ukcom_exe.cpe -> ..\obj\ukcom_exe.exe" -ForegroundColor "yellow"
