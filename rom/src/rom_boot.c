@@ -51,7 +51,7 @@ void replacement_code(void)
 
 // Search the instructions of the above function and return a pointer to the instructions
 // after the 3 nop's.
-static unsigned int* get_replacement_code_start(void)
+static inline unsigned int* get_replacement_code_start(void)
 {
     int nopCount = 0;
     unsigned int* pFuncInstructions = (unsigned int*)replacement_code;
@@ -82,7 +82,7 @@ static unsigned int* get_replacement_code_start(void)
 // to use the cached data which will be the data before we overwrote it.
 unsigned int* kBreakPointVectorAddress = (unsigned int*)0xa0000040;
 
-static void overwrite_cop0_breakpoint_vector(void)
+static inline void overwrite_cop0_breakpoint_vector(void)
 {
     unsigned int* pPayload = get_replacement_code_start();
     int i;
@@ -99,11 +99,12 @@ static void overwrite_cop0_breakpoint_vector(void)
 #define set_BDA(val) __asm__("mtc0	%0, $5" : : "r"(val))
 #define set_BPC(val) __asm__("mtc0	%0, $3" : : "r"(val))
 #define set_DCIC(val) __asm__("mtc0	%0, $7" : : "r"(val))
+#define set_SP(val)  __asm__("move $29, %0" : : "r"(val)) // Unlike the PSYQ SetSp this can be inlined
 
 // Sets a break point on access to 0x80030000, this address is where the bios copies
 // a small PS-EXE which is the shell program that contains the CD-Player and memory card manager.
 // Therefore at this point if we take control we know that the system is booted enough to be in a usable state.
-static void install_break_point_on_bios_shell_copy(void)
+static inline void install_break_point_on_bios_shell_copy(void)
 {
     // Set BPCM and BDAM masks
     set_BDAM(0xffffffff);
@@ -119,7 +120,7 @@ static void install_break_point_on_bios_shell_copy(void)
     set_DCIC(0xeb800000);
 }
 
-static void clear_break_point(void)
+static inline void clear_break_point(void)
 {
     set_DCIC(0x0);
     set_BDAM(0x0);
@@ -133,10 +134,10 @@ extern const unsigned int exe_data_end;
 
 unsigned char* pExeTarget = (unsigned char*)0x80010000;
 
-static void copy_ps_exe_to_ram()
+static inline void copy_ps_exe_to_ram()
 {
     int i;
-    const unsigned int* pSrc = (const unsigned int*)(0x1F000420); 
+    const unsigned int* pSrc = (const unsigned int*)(0x1F000350); 
     unsigned int* pDst = (unsigned int*)pExeTarget;
     printf("Copy start from 0x%X08 to 0x%X08\n", pSrc, pDst);
     for (i=0; i<61440 / 4; i++)
@@ -150,7 +151,7 @@ static void copy_ps_exe_to_ram()
 
 typedef void(*TEntryPoint)(void);
 
-static void call_ps_exe_entry_point(void)
+static inline void call_ps_exe_entry_point(void)
 {
     ((TEntryPoint)0x800161F8)();
 }
@@ -159,7 +160,7 @@ void mid_boot_entry_point(void)
 {
     clear_break_point();
 
-    SetSp(0x801ffff0);
+    set_SP(0x801ffff0);
 
     // Re-enable interrupts
     ExitCriticalSection();
