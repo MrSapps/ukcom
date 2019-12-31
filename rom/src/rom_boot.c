@@ -7,20 +7,26 @@ typedef struct
     const char licenseString[0x2C];
     const char ttyDebugString[0x50];
 } rom_header;
+// Total size is 0x50+0x2C+0x4 = 0x80
 
 void pre_boot_entry_point(void);
-void post_boot_entry_point(void);
+
+#ifdef DEBUG
+#define LOG(format, args...) printf(format, args)
+#else
+#define LOG(format, args...)
+#endif
 
 // This must be the first thing in the produced binary for the ROM file format to be correct
 const rom_header gRomHeader[2] = 
 {
     {
-
+        // This space is replaced with code/functions
     },
     {
         pre_boot_entry_point,
         "Licensed by Sony Computer Entertainment Inc.",
-        "pre boot message"
+        "", // A single null, the rest of the space is replace with code
     }
 };
 
@@ -135,16 +141,16 @@ unsigned char* pExeTarget = (unsigned char*)0x80010000;
 static inline void copy_ps_exe_to_ram()
 {
     int i;
-    const unsigned int* pSrc = (const unsigned int*)(0x1F000320); 
+    const unsigned int* pSrc = (const unsigned int*)(0x1F00024C); 
     unsigned int* pDst = (unsigned int*)pExeTarget;
-    printf("Copy start from 0x%X08 to 0x%X08\n", pSrc, pDst);
+    LOG("Copy start from 0x%X08 to 0x%X08\n", pSrc, pDst);
     for (i=0; i<61440 / 4; i++)
     {
         *pDst = *pSrc;
         pSrc++;
         pDst++;
     }
-    printf("Copy end at 0x%X08 from 0x%X08\n", pDst, pSrc);
+    LOG("Copy end at 0x%X08 from 0x%X08\n", pDst, pSrc);
 }
 
 typedef void(*TEntryPoint)(void);
@@ -163,13 +169,13 @@ void mid_boot_entry_point(void)
     // Re-enable interrupts
     ExitCriticalSection();
 
-    printf("Copy exe\n");
+    LOG("Copy exe\n");
     copy_ps_exe_to_ram();
 
-    printf("Call proc\n");
+    LOG("Call proc\n");
     call_ps_exe_entry_point();
 
-    printf("proc returned!\n");
+    LOG("proc returned!\n");
 }
 
 void pre_boot_entry_point(void)
