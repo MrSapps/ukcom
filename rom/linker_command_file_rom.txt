@@ -5,6 +5,18 @@
 	include "obj\rom_boot.obj"
 	include "obj\test.obj"
 
+group_mid_boot_entry_point_1F000000	group org($1F000000)
+	section .mid_boot_entry_point_1F000000, group_mid_boot_entry_point_1F000000
+
+
+group_gRomHeader_1F000080	group org($1F000080)
+	section .gRomHeader_1F000080, group_gRomHeader_1F000080
+
+group_all group
+	section .text, group_all
+	section .data, group_all
+	section .exe_data, group_all
+
 ; include sdk libs
 	; printf
 	inclib "libc.lib"

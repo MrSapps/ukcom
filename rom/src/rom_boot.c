@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <libapi.h>
 
+#define SECTION(x) __attribute__((section(x)))
+
 typedef struct
 {
     const void* entryPointFn;
@@ -17,23 +19,19 @@ void pre_boot_entry_point(void);
 #define LOG(format, args...)
 #endif
 
-// This must be the first thing in the produced binary for the ROM file format to be correct
-const rom_header gRomHeader[2] = 
+// The ROM file must start with this data, however there are 2 rom headers. Once for post boot and one for preboot. As we don't use
+// post boot we force some code into there to save space.
+const rom_header SECTION(".gRomHeader_1F000080") gRomHeader = 
 {
-    {
-        // This space is replaced with code/functions
-    },
-    {
-        pre_boot_entry_point,
-        "Licensed by Sony Computer Entertainment Inc.",
-        "", // A single null, the rest of the space is replace with code
-    }
+    pre_boot_entry_point,
+    "Licensed by Sony Computer Entertainment Inc.",
+     "", // A single null, the rest of the space is filled with compiled C code.
 };
 
 // This function contains code that will be used to overwrite the COP0 exception handler vector.
 // The handler will be called when a hardware break point that we install is hit. Hence at that point
 // the code below will execute which will jump to our mid boot entry point function.
-void replacement_code(void)
+void SECTION(".mid_boot_entry_point_1F000000") replacement_code(void)
 {
     // $26 = k0, kernel temp
     __asm__
@@ -55,7 +53,7 @@ void replacement_code(void)
 
 // Search the instructions of the above function and return a pointer to the instructions
 // after the 3 nop's.
-static inline unsigned int* get_replacement_code_start(void)
+static unsigned int* SECTION(".mid_boot_entry_point_1F000000") get_replacement_code_start(void)
 {
     int nopCount = 0;
     unsigned int* pFuncInstructions = (unsigned int*)replacement_code;
@@ -86,7 +84,7 @@ static inline unsigned int* get_replacement_code_start(void)
 // to use the cached data which will be the data before we overwrote it.
 unsigned int* kBreakPointVectorAddress = (unsigned int*)0xa0000040;
 
-static inline void overwrite_cop0_breakpoint_vector(void)
+static void overwrite_cop0_breakpoint_vector(void)
 {
     unsigned int* pPayload = get_replacement_code_start();
     int i;
@@ -141,7 +139,7 @@ unsigned char* pExeTarget = (unsigned char*)0x80010000;
 static inline void copy_ps_exe_to_ram()
 {
     int i;
-    const unsigned int* pSrc = (const unsigned int*)(0x1F00024C); 
+    const unsigned int* pSrc = (const unsigned int*)(0x1F000228); 
     unsigned int* pDst = (unsigned int*)pExeTarget;
     LOG("Copy start from 0x%X08 to 0x%X08\n", pSrc, pDst);
     for (i=0; i<61440 / 4; i++)
