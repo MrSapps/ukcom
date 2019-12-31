@@ -8,7 +8,6 @@
 group_mid_boot_entry_point_1F000000	group org($1F000000)
 	section .mid_boot_entry_point_1F000000, group_mid_boot_entry_point_1F000000
 
-
 group_gRomHeader_1F000080	group org($1F000080)
 	section .gRomHeader_1F000080, group_gRomHeader_1F000080
 

@@ -7,7 +7,7 @@ typedef struct
 {
     const void* entryPointFn;
     const char licenseString[0x2C];
-    const char ttyDebugString[0x50];
+    const char ttyDebugString[1/*0x50*/];
 } rom_header;
 // Total size is 0x50+0x2C+0x4 = 0x80
 
@@ -80,12 +80,12 @@ static unsigned int* SECTION(".mid_boot_entry_point_1F000000") get_replacement_c
     return pFuncInstructions;
 }
 
-// Same as 0x80000040 but using the uncached I/O space. Using the cached space might cause the CPU 
-// to use the cached data which will be the data before we overwrote it.
-unsigned int* kBreakPointVectorAddress = (unsigned int*)0xa0000040;
-
-static void overwrite_cop0_breakpoint_vector(void)
+static inline void overwrite_cop0_breakpoint_vector(void)
 {
+    // Same as 0x80000040 but using the uncached I/O space. Using the cached space might cause the CPU 
+    // to use the cached data which will be the data before we overwrote it.
+    unsigned int* kBreakPointVectorAddress = (unsigned int*)0xa0000040;
+
     unsigned int* pPayload = get_replacement_code_start();
     int i;
 
@@ -122,7 +122,7 @@ static inline void install_break_point_on_bios_shell_copy(void)
     set_DCIC(0xeb800000);
 }
 
-static inline void clear_break_point(void)
+static void inline clear_break_point(void)
 {
     set_DCIC(0x0);
     set_BDAM(0x0);
@@ -134,12 +134,11 @@ static inline void clear_break_point(void)
 extern const unsigned int exe_data_start;
 extern const unsigned int exe_data_end;
 
-unsigned char* pExeTarget = (unsigned char*)0x80010000;
-
 static inline void copy_ps_exe_to_ram()
 {
+    unsigned char* pExeTarget = (unsigned char*)0x80010000;
     int i;
-    const unsigned int* pSrc = (const unsigned int*)(0x1F000228); 
+    const unsigned int* pSrc = (const unsigned int*)(0x1F0001B0); 
     unsigned int* pDst = (unsigned int*)pExeTarget;
     LOG("Copy start from 0x%X08 to 0x%X08\n", pSrc, pDst);
     for (i=0; i<61440 / 4; i++)
