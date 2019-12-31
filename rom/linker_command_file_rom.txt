@@ -6,11 +6,7 @@
 	include "obj\test.obj"
 
 ; include sdk libs
+	; printf
 	inclib "libc.lib"
-	inclib "libgs.lib"
-	inclib "libetc.lib"
-	inclib "libgpu.lib"
-	inclib "libgte.lib"
+	; ExitCriticalSection
 	inclib "libapi.lib"
-	inclib "libsn.lib"
-	
