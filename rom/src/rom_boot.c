@@ -15,9 +15,7 @@ void post_boot_entry_point(void);
 const rom_header gRomHeader[2] = 
 {
     {
-        post_boot_entry_point,
-        "Licensed by Sony Computer Entertainment Inc.",
-        "post boot message"
+
     },
     {
         pre_boot_entry_point,
@@ -137,7 +135,7 @@ unsigned char* pExeTarget = (unsigned char*)0x80010000;
 static inline void copy_ps_exe_to_ram()
 {
     int i;
-    const unsigned int* pSrc = (const unsigned int*)(0x1F000350); 
+    const unsigned int* pSrc = (const unsigned int*)(0x1F000320); 
     unsigned int* pDst = (unsigned int*)pExeTarget;
     printf("Copy start from 0x%X08 to 0x%X08\n", pSrc, pDst);
     for (i=0; i<61440 / 4; i++)
@@ -178,12 +176,4 @@ void pre_boot_entry_point(void)
 {
     overwrite_cop0_breakpoint_vector();
     install_break_point_on_bios_shell_copy();
-}
-
-void post_boot_entry_point(void)
-{
-    printf("postboot\n");
-
-    // Called when showing the PS-Logo on the boot screen.
-    // Do nothing, just return control to the BIOS.
 }
